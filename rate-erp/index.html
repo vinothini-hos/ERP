@@ -1,0 +1,788 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rate Master</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #EAEEF1;
+    --panel: #FFFFFF;
+    --sunk: #F4F6F8;
+    --ink: #18242D;
+    --muted: #566570;
+    --line: #C3CDD4;
+    --line-soft: #DDE3E7;
+    --accent: #0D6680;
+    --accent-ink: #FFFFFF;
+    --accent-soft: #DAECF1;
+    --low: #23673F;
+    --low-soft: #DFF0E5;
+    --warn: #8A5A00;
+    --danger: #A3322A;
+    --font: "Barlow", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --font-head: "Barlow Semi Condensed", "Barlow", system-ui, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      color-scheme: dark;
+      --bg: #10171C;
+      --panel: #19232A;
+      --sunk: #141D23;
+      --ink: #E3E9ED;
+      --muted: #98A6B0;
+      --line: #34434D;
+      --line-soft: #25313A;
+      --accent: #57B6D3;
+      --accent-ink: #0A1A20;
+      --accent-soft: #17343E;
+      --low: #74CC98;
+      --low-soft: #16302A;
+      --warn: #E7B45A;
+      --danger: #EF8B81;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 400 15px/1.5 var(--font);
+    font-variant-numeric: tabular-nums;
+  }
+  h1, h2, h3 { font-family: var(--font-head); font-weight: 600; line-height: 1.2; margin: 0; }
+  h1 { font-size: 1.6rem; letter-spacing: -0.01em; }
+  h2 { font-size: 1.2rem; }
+  h3 { font-size: 1.05rem; }
+  button, input, select { font: inherit; color: inherit; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* ---------- header: the accent band reads as a pipe run across the top */
+  .top {
+    border-top: 5px solid var(--accent);
+    background: var(--panel);
+    border-bottom: 1px solid var(--line);
+  }
+  .top-inner, main { max-width: 1240px; margin: 0 auto; padding: 0 16px; }
+  .top-inner { padding-top: 18px; padding-bottom: 16px; }
+  .top-inner p { margin: 2px 0 0; color: var(--muted); }
+
+  main { padding-top: 24px; padding-bottom: 48px; }
+
+  /* ---------- controls */
+  label { display: block; font-weight: 500; font-size: 0.9rem; }
+  input, select {
+    width: 100%; margin-top: 4px; padding: 8px 10px;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 4px;
+  }
+  input:hover, select:hover { border-color: var(--muted); }
+  input[type="number"] { text-align: right; }
+  input[type="checkbox"] { width: auto; margin: 0; accent-color: var(--accent); }
+  .primary, .secondary {
+    border-radius: 4px; padding: 9px 16px; cursor: pointer; font-weight: 600;
+    border: 1px solid var(--accent);
+  }
+  .primary { background: var(--accent); color: var(--accent-ink); }
+  .primary:hover { filter: brightness(1.08); }
+  .secondary { background: transparent; color: var(--accent); }
+  .secondary:hover { background: var(--accent-soft); }
+  .link-btn {
+    background: none; border: 0; padding: 4px 0; cursor: pointer;
+    color: var(--accent); font-weight: 600;
+  }
+  .link-btn:hover { text-decoration: underline; }
+  .danger { color: var(--danger); }
+  .icon-btn {
+    width: 32px; height: 36px; flex: none; cursor: pointer;
+    background: none; border: 1px solid transparent; border-radius: 4px;
+    color: var(--muted); font-size: 1.2rem; line-height: 1;
+  }
+  .icon-btn:hover { color: var(--danger); border-color: var(--line); }
+  .error {
+    margin: 12px 0 0; padding: 8px 10px; border-left: 3px solid var(--danger);
+    color: var(--danger); background: color-mix(in srgb, var(--danger) 8%, transparent);
+  }
+  .hint { color: var(--muted); font-size: 0.86rem; margin: 10px 0 0; max-width: 76ch; }
+  .opt { font-weight: 400; color: var(--muted); }
+  .muted { color: var(--muted); }
+  [hidden] { display: none !important; }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+  /* ---------- layout */
+  .layout {
+    display: grid; grid-template-columns: minmax(300px, 370px) minmax(0, 1fr); gap: 28px; align-items: start;
+  }
+  .layout > * { min-width: 0; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 20px;
+  }
+  #product-form { position: sticky; top: 16px; }
+  #product-form h2 { margin-bottom: 14px; }
+  #product-form label { margin-bottom: 12px; }
+  fieldset { border: 0; padding: 0; margin: 4px 0 0; }
+  legend { font-weight: 500; font-size: 0.9rem; padding: 0; margin-bottom: 6px; }
+
+  /* one vendor in the add-product form: vendor on top, price + valid till below */
+  .vrow {
+    display: grid; grid-template-columns: minmax(0, 1fr) 32px; gap: 8px;
+    padding: 10px; margin-bottom: 8px;
+    background: var(--sunk); border: 1px solid var(--line-soft); border-radius: 4px;
+  }
+  .vrow select, .vrow input { margin-top: 0; min-width: 0; }
+  .v-cell { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+  .v-fields { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: 8px; }
+  #product-form .v-fields label { margin: 0; }
+  .mini { display: block; font-size: 0.78rem; color: var(--muted); margin-bottom: 3px; }
+  .form-actions { display: flex; gap: 8px; margin-top: 18px; }
+
+  .list-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
+  .list-head h2 span { color: var(--muted); font-weight: 400; }
+  .list-tools { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
+  .list-tools label { margin: 0; }
+  #as-of { width: 160px; }
+  #search { width: 240px; }
+  .asof-note {
+    margin: 0 0 12px; padding: 8px 12px; border-left: 3px solid var(--accent);
+    background: var(--accent-soft); display: flex; gap: 12px; flex-wrap: wrap; align-items: baseline;
+  }
+
+  table { width: 100%; border-collapse: collapse; }
+  th {
+    text-align: left; font-size: 0.82rem; font-weight: 600; color: var(--muted);
+    padding: 8px 10px; border-bottom: 1px solid var(--line);
+  }
+  td { padding: 10px; border-bottom: 1px solid var(--line-soft); vertical-align: top; }
+  .num { text-align: right; white-space: nowrap; }
+  .pname { font-weight: 600; min-width: 170px; }
+
+  /* vendor rate chips */
+  .rates { display: flex; flex-wrap: wrap; gap: 6px; }
+  .rate {
+    display: inline-flex; flex-wrap: wrap; gap: 0 8px; align-items: baseline;
+    border: 1px solid var(--line); border-radius: 4px; padding: 2px 8px; background: var(--panel);
+    text-align: left;
+  }
+  .rate b { font-weight: 600; }
+  .rate small { font-size: 0.74rem; font-weight: 500; color: var(--muted); }
+  .rate small.ends { color: var(--warn); font-weight: 600; }
+  .rate small.low-tag { color: inherit; font-weight: 600; }
+  .rate.low { border-color: var(--low); background: var(--low-soft); color: var(--low); }
+  .rate.low small:not(.ends) { color: inherit; opacity: 0.8; }
+  .rate.none { border-style: dashed; color: var(--muted); background: transparent; }
+  button.rate { cursor: pointer; }
+  button.rate .add { color: var(--accent); font-weight: 600; font-size: 0.82rem; }
+  button.rate:hover .add { text-decoration: underline; }
+  .row-actions { white-space: nowrap; text-align: right; }
+  .row-actions button { margin-left: 10px; }
+  .row-actions [aria-expanded="true"] { text-decoration: underline; }
+
+  /* rates panel under a product */
+  tr.panel-row > td { padding: 4px 0 18px; border-bottom: 1px solid var(--line); }
+  .rates-panel { background: var(--panel); border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: 6px; padding: 18px; }
+  .rates-panel h3 { margin-bottom: 10px; }
+  .rate-grid {
+    display: grid; gap: 10px; align-items: end;
+    grid-template-columns: minmax(180px, 1.5fr) minmax(120px, 0.9fr) minmax(150px, 1fr) auto;
+  }
+  .rate-grid label { margin: 0; min-width: 0; }
+  .rate-grid .r-new { margin-top: 6px; }
+  .start-note {
+    margin: 12px 0 0; padding: 8px 12px; background: var(--sunk); border-radius: 4px;
+    display: flex; flex-wrap: wrap; gap: 6px 18px; align-items: center;
+  }
+  .start-note .check { display: inline-flex; gap: 8px; align-items: center; font-weight: 500; margin: 0; cursor: pointer; }
+  .hist-title { margin-top: 22px; }
+  .table-scroll { overflow-x: auto; position: relative; } /* relative: keeps hidden screen-reader text inside the scroll box */
+  table.history { min-width: 560px; }
+  table.history th, table.history td { padding: 7px 8px; vertical-align: middle; }
+  table.history td { font-size: 0.92rem; }
+  table.history .icon-btn { height: 30px; }
+  .status { font-size: 0.82rem; font-weight: 600; color: var(--muted); }
+  .st-current { color: var(--low); }
+  .st-upcoming { color: var(--accent); }
+  .st-expired { color: var(--warn); }
+
+  .empty { color: var(--muted); padding: 28px 10px; text-align: center; }
+
+  #toast {
+    position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%);
+    background: var(--ink); color: var(--bg); padding: 9px 16px; border-radius: 4px;
+    font-weight: 500; max-width: calc(100% - 32px); z-index: 10;
+  }
+
+  /* ---------- small screens */
+  @media (max-width: 1100px) {
+    .rate-grid { grid-template-columns: 1fr 1fr; }
+    .rate-grid button { justify-self: start; }
+  }
+  @media (max-width: 880px) {
+    .layout { grid-template-columns: minmax(0, 1fr); }
+    #product-form { position: static; }
+    .list-tools, .list-tools label { width: 100%; }
+    #as-of, #search { width: 100%; }
+  }
+  @media (max-width: 640px) {
+    #product-table, #product-table > tbody { display: block; }
+    #product-table > thead { display: none; }
+    #product-table > tbody > tr { display: block; padding: 12px 0; border-bottom: 1px solid var(--line-soft); }
+    #product-table > tbody > tr > td { display: block; border: 0; padding: 2px 0; }
+    #product-table .pname { min-width: 0; }
+    #product-table td.unit { display: inline; color: var(--muted); }
+    #product-table td.unit::before { content: "Unit: "; }
+    #product-table td.rates-cell { padding-top: 8px; }
+    .row-actions { text-align: left; padding-top: 8px !important; }
+    .row-actions button { margin: 0 16px 0 0; }
+    #product-table > tbody > tr.panel-row { padding-top: 0; }
+    .rates-panel { padding: 14px; }
+    .rate-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-inner">
+    <h1>Rate Master</h1>
+    <p>Products and what each vendor charges for them, with the date each rate is valid till.</p>
+  </div>
+</header>
+
+<main class="layout">
+  <!-- ============ add / edit product ============ -->
+  <form id="product-form" class="panel" novalidate>
+    <h2 id="form-title">Add product</h2>
+    <label>Product name
+      <input id="f-name" autocomplete="off" placeholder="e.g. Ball valve 1in SS316">
+    </label>
+    <label>Unit
+      <input id="f-unit" list="unit-list" autocomplete="off" placeholder="Nos, m, kg, set…">
+    </label>
+    <fieldset id="new-only">
+      <legend>Vendor rates</legend>
+      <div id="vendor-rows"></div>
+      <button type="button" id="add-vendor" class="link-btn">+ Add another vendor</button>
+    </fieldset>
+    <p id="edit-note" class="hint" hidden>This changes the name and unit only. To add a new rate or another vendor, use <b>Rates</b> on the product in the list.</p>
+    <p id="form-error" class="error" role="alert" hidden></p>
+    <div class="form-actions">
+      <button type="submit" class="primary" id="save-btn">Save product</button>
+      <button type="button" class="secondary" id="cancel-edit" hidden>Cancel</button>
+    </div>
+  </form>
+
+  <!-- ============ product list ============ -->
+  <section aria-labelledby="list-title">
+    <div class="list-head">
+      <h2 id="list-title">Products <span id="product-count"></span></h2>
+      <div class="list-tools">
+        <label>Rates as of
+          <input type="date" id="as-of">
+        </label>
+        <input type="search" id="search" placeholder="Search products or vendors" aria-label="Search products or vendors">
+      </div>
+    </div>
+    <p class="asof-note" id="asof-note" hidden>
+      <span id="asof-text"></span>
+      <button type="button" class="link-btn" id="asof-today">Back to today</button>
+    </p>
+    <table id="product-table">
+      <thead>
+        <tr><th>Product</th><th>Unit</th><th>Vendor rates, lowest first</th><th><span class="sr-only">Actions</span></th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <p class="empty" id="product-empty" hidden></p>
+  </section>
+</main>
+
+<datalist id="unit-list">
+  <option value="Nos"></option><option value="Set"></option><option value="m"></option>
+  <option value="m²"></option><option value="kg"></option><option value="L"></option>
+  <option value="Lot"></option><option value="Pair"></option>
+</datalist>
+
+<div id="toast" role="status" aria-live="polite" hidden></div>
+
+<script>
+const $ = (s, el = document) => el.querySelector(s);
+const inr = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 2 });
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const NEW_VENDOR = '__new__';
+
+function todayISO() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+// "31 Oct" for dates in the current year, "31 Oct 2027" otherwise, "today" for today
+function shortDate(iso) {
+  if (!iso) return '';
+  if (iso === todayISO()) return 'today';
+  return fmtDate(iso, iso.slice(0, 4) !== todayISO().slice(0, 4));
+}
+function fmtDate(iso, withYear = true) {
+  if (!iso) return '';
+  const [y, m, d] = iso.split('-').map(Number);
+  const opts = { day: 'numeric', month: 'short' };
+  if (withYear) opts.year = 'numeric';
+  return new Date(y, m - 1, d).toLocaleDateString('en-IN', opts);
+}
+
+const state = {
+  products: [], vendors: [], editingId: null,
+  asOf: todayISO(),   // rates are shown as they apply on this day
+  openId: null,       // product whose Rates panel is open
+  panel: null,        // the panel's <tr>, kept so typed values survive re-renders
+  panelInfo: {},      // per vendor: when a new rate would start
+};
+
+/* ---------------- helpers ---------------- */
+async function api(method, url, body) {
+  const res = await fetch(url, {
+    method,
+    headers: body ? { 'Content-Type': 'application/json' } : {},
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || `The server returned an error (${res.status}).`);
+  return data;
+}
+function showError(el, msg) { el.textContent = msg; el.hidden = !msg; }
+let toastTimer;
+function toast(msg) {
+  const t = $('#toast'); t.textContent = msg; t.hidden = false;
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => (t.hidden = true), 3000);
+}
+function knownVendor(name) {
+  return state.vendors.find(v => v.toLowerCase() === name.toLowerCase()) || name;
+}
+const reduceMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ---------------- product list ---------------- */
+async function loadProducts() {
+  const [products, vendors] = await Promise.all([
+    api('GET', `/api/products?date=${state.asOf}`),
+    api('GET', '/api/vendors'),
+  ]);
+  state.products = products;
+  state.vendors = vendors;
+  if (state.openId && !products.some(p => p.id === state.openId)) state.openId = null;
+  renderProducts();
+  refreshVendorSelects();
+  if (state.openId) { refreshPanelVendors(); await loadHistory(); }
+}
+
+function chip(p, v, isLowest) {
+  const name = esc(v.vendor);
+  if (v.status === 'expired' || v.status === 'not_started') {
+    // the date the old rate was last valid, never "today" (it may have ended today when viewing a later date)
+    const was = v.expired_on ? `was valid till ${fmtDate(v.expired_on, v.expired_on.slice(0, 4) !== todayISO().slice(0, 4))}` : '';
+    let note;
+    if (v.status === 'expired' && v.next_rate) note = `rate expired (${was}), next rate from ${shortDate(v.next_rate.from)}`;
+    else if (v.next_rate) note = `starts ${shortDate(v.next_rate.from)}`;
+    else note = `rate expired${was ? ` (${was})` : ''}`;
+    if (v.next_rate) return `<span class="rate none">${name} <small>${note}</small></span>`;
+    return `<button type="button" class="rate none" data-renew="${p.id}" data-vendor="${name}"
+      aria-label="${name}: ${note}. Add a new rate">${name} <small>${note}</small> <span class="add">Add rate</span></button>`;
+  }
+  let html = `${name} <b>${inr.format(v.cost)}</b>`;
+  if (v.valid_till) {
+    html += v.valid_till === todayISO()
+      ? ` <small class="ends">valid till today</small>`
+      : ` <small>till ${shortDate(v.valid_till)}</small>`;
+  } else {
+    html += ` <small>no end date</small>`;
+  }
+  if (isLowest) html += ' <small class="low-tag">lowest</small>';
+  return `<span class="rate${isLowest ? ' low' : ''}">${html}</span>`;
+}
+
+function renderProducts() {
+  const q = $('#search').value.trim().toLowerCase();
+  const list = state.products.filter(p =>
+    !q || p.name.toLowerCase().includes(q) || p.unit.toLowerCase().includes(q) ||
+    p.vendors.some(v => v.vendor.toLowerCase().includes(q)));
+
+  $('#product-count').textContent = state.products.length ? `(${state.products.length})` : '';
+  const tbody = $('#product-table tbody');
+  tbody.innerHTML = list.map(p => {
+    const priced = p.vendors.filter(v => v.cost !== null);
+    const min = Math.min(...priced.map(v => v.cost));
+    const chips = p.vendors.map(v => chip(p, v, priced.length > 1 && v.cost === min)).join('');
+    const open = state.openId === p.id;
+    return `<tr data-id="${p.id}">
+      <td class="pname">${esc(p.name)}</td>
+      <td class="unit">${esc(p.unit)}</td>
+      <td class="rates-cell"><div class="rates">${chips || '<span class="muted">No vendor rates</span>'}</div></td>
+      <td class="row-actions">
+        <button class="link-btn" data-rates="${p.id}" aria-expanded="${open}">${open ? 'Hide rates' : 'Rates'}</button>
+        <button class="link-btn" data-edit="${p.id}">Edit</button>
+        <button class="link-btn danger" data-del="${p.id}">Delete</button>
+      </td>
+    </tr>`;
+  }).join('');
+
+  // put the open Rates panel back under its product
+  if (state.openId && state.panel) {
+    const row = tbody.querySelector(`tr[data-id="${state.openId}"]`);
+    if (row) row.after(state.panel); else state.panel.remove();
+  }
+
+  const empty = $('#product-empty');
+  empty.hidden = list.length > 0;
+  empty.textContent = state.products.length
+    ? `Nothing matches “${$('#search').value.trim()}”.`
+    : 'No products yet. Add one with the form: its name, unit, and each vendor’s price and valid-till date.';
+  $('#product-table thead').hidden = list.length === 0;
+}
+
+/* ---------------- "rates as of" date ---------------- */
+function setAsOf(day) {
+  state.asOf = day || todayISO();
+  $('#as-of').value = state.asOf;
+  const today = todayISO();
+  $('#asof-note').hidden = state.asOf === today;
+  $('#asof-text').textContent = state.asOf < today
+    ? `Showing rates as they were on ${fmtDate(state.asOf)}.`
+    : `Showing rates as they will be on ${fmtDate(state.asOf)}.`;
+  loadProducts().catch(err => toast(err.message));
+}
+$('#as-of').addEventListener('change', e => setAsOf(e.target.value));
+$('#asof-today').addEventListener('click', () => setAsOf(todayISO()));
+
+/* ---------------- add / edit product form ---------------- */
+// One block per vendor: vendor dropdown, then its price and valid-till date.
+function vendorRow() {
+  const row = document.createElement('div');
+  row.className = 'vrow';
+  row.innerHTML = `
+    <div class="v-cell">
+      <select class="v-select" aria-label="Vendor"></select>
+      <input class="v-new" autocomplete="off" placeholder="Type the new vendor's name" aria-label="New vendor name" hidden>
+    </div>
+    <button type="button" class="icon-btn" aria-label="Remove this vendor" title="Remove this vendor">×</button>
+    <div class="v-fields">
+      <label><span class="mini">Price per unit (₹)</span>
+        <input class="v-cost" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0.00">
+      </label>
+      <label><span class="mini">Valid till</span>
+        <input class="v-till" type="date">
+      </label>
+    </div>`;
+  $('.v-till', row).min = todayISO();
+  $('.v-select', row).addEventListener('change', e => {
+    const isNew = e.target.value === NEW_VENDOR;
+    const box = $('.v-new', row);
+    box.hidden = !isNew;
+    if (isNew) box.focus(); else box.value = '';
+    refreshVendorSelects();
+  });
+  $('.icon-btn', row).addEventListener('click', () => {
+    row.remove();
+    if (!$('#vendor-rows').children.length) $('#vendor-rows').append(vendorRow());
+    refreshVendorSelects();
+  });
+  return row;
+}
+
+// Rebuild every vendor dropdown in the form. A vendor already picked in another
+// row is shown but disabled, so the same vendor can't be added twice.
+function refreshVendorSelects() {
+  const selects = [...document.querySelectorAll('#vendor-rows .v-select')];
+  const values = selects.map(s => s.value);
+  selects.forEach((s, i) => {
+    const taken = new Set(values.filter((v, j) => j !== i && v && v !== NEW_VENDOR));
+    s.innerHTML =
+      `<option value="">Select vendor</option>` +
+      state.vendors.map(n => {
+        const used = taken.has(n);
+        return `<option value="${esc(n)}"${used ? ' disabled' : ''}>${esc(n)}${used ? ' (already added)' : ''}</option>`;
+      }).join('') +
+      `<option value="${NEW_VENDOR}">+ New vendor…</option>`;
+    s.value = [...s.options].some(o => o.value === values[i]) ? values[i] : '';
+  });
+}
+
+function resetForm() {
+  state.editingId = null;
+  $('#product-form').reset();
+  $('#vendor-rows').replaceChildren(vendorRow(), vendorRow());
+  refreshVendorSelects();
+  $('#new-only').hidden = false;
+  $('#edit-note').hidden = true;
+  $('#form-title').textContent = 'Add product';
+  $('#save-btn').textContent = 'Save product';
+  $('#cancel-edit').hidden = true;
+  showError($('#form-error'), '');
+}
+
+function editProduct(id) {
+  const p = state.products.find(p => p.id === id);
+  if (!p) return;
+  state.editingId = id;
+  $('#f-name').value = p.name;
+  $('#f-unit').value = p.unit;
+  $('#new-only').hidden = true;
+  $('#edit-note').hidden = false;
+  $('#form-title').textContent = 'Edit product';
+  $('#save-btn').textContent = 'Save changes';
+  $('#cancel-edit').hidden = false;
+  showError($('#form-error'), '');
+  $('#product-form').scrollIntoView({ behavior: reduceMotion() ? 'auto' : 'smooth', block: 'nearest' });
+  $('#f-name').focus({ preventScroll: true });
+}
+
+$('#add-vendor').addEventListener('click', () => {
+  const row = vendorRow();
+  $('#vendor-rows').append(row);
+  refreshVendorSelects();
+  $('.v-select', row).focus();
+});
+$('#cancel-edit').addEventListener('click', resetForm);
+$('#search').addEventListener('input', renderProducts);
+
+$('#product-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const name = $('#f-name').value;
+  const unit = $('#f-unit').value;
+  const editing = state.editingId;
+  try {
+    if (editing) {
+      await api('PUT', `/api/products/${editing}`, { name, unit });
+    } else {
+      await api('POST', '/api/products', {
+        name, unit,
+        vendors: [...document.querySelectorAll('#vendor-rows .vrow')].map(r => {
+          const picked = $('.v-select', r).value;
+          const vendor = picked === NEW_VENDOR ? $('.v-new', r).value.trim() : picked;
+          return { vendor: knownVendor(vendor), cost: $('.v-cost', r).value, valid_until: $('.v-till', r).value };
+        }),
+      });
+    }
+    toast(`${editing ? 'Saved changes to' : 'Added'} ${name.trim()}`);
+    resetForm();
+    await loadProducts();
+    $('#f-name').focus();
+  } catch (err) {
+    showError($('#form-error'), err.message);
+  }
+});
+
+/* ---------------- Rates panel: add a rate, see history ---------------- */
+function buildPanel() {
+  const tr = document.createElement('tr');
+  tr.className = 'panel-row';
+  tr.innerHTML = `<td colspan="4"><div class="rates-panel">
+    <form class="rate-form" novalidate>
+      <h3>Add a rate for <span class="p-name"></span></h3>
+      <div class="rate-grid">
+        <label>Vendor
+          <select class="r-vendor"></select>
+          <input class="r-new" autocomplete="off" placeholder="Type the new vendor's name" aria-label="New vendor name" hidden>
+        </label>
+        <label>Price per <span class="p-unit"></span> (₹)
+          <input class="r-cost" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0.00">
+        </label>
+        <label>Valid till
+          <input class="r-till" type="date">
+        </label>
+        <button class="primary" type="submit">Add rate</button>
+      </div>
+      <p class="start-note" hidden>
+        <span class="start-text"></span>
+        <label class="check" hidden><input type="checkbox" class="r-replace"> Start today instead, replacing the current rate</label>
+      </p>
+      <p class="hint">A rate applies until its valid-till date. After that the vendor shows no rate for this product until you add a new one.</p>
+      <p class="error r-error" role="alert" hidden></p>
+    </form>
+    <h3 class="hist-title">Rate history <span class="opt hist-asof"></span></h3>
+    <div class="table-scroll">
+      <table class="history">
+        <thead><tr><th>Vendor</th><th class="num">Price</th><th>From</th><th>Valid till</th><th>Status</th><th><span class="sr-only">Delete</span></th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div></td>`;
+
+  $('.r-till', tr).min = todayISO();
+  $('.r-vendor', tr).addEventListener('change', e => {
+    const isNew = e.target.value === NEW_VENDOR;
+    $('.r-new', tr).hidden = !isNew;
+    if (isNew) $('.r-new', tr).focus();
+    $('.r-replace', tr).checked = false;
+    updateStartNote();
+  });
+  $('.r-new', tr).addEventListener('input', updateStartNote);
+  $('.r-replace', tr).addEventListener('change', updateStartNote);
+
+  $('.rate-form', tr).addEventListener('submit', async e => {
+    e.preventDefault();
+    const err = $('.r-error', tr);
+    const vendor = panelVendor();
+    if (!vendor) return showError(err, $('.r-vendor', tr).value === NEW_VENDOR ? "Type the new vendor's name." : 'Select a vendor.');
+    try {
+      const res = await api('POST', `/api/products/${state.openId}/rates`, {
+        vendor,
+        cost: $('.r-cost', tr).value,
+        valid_until: $('.r-till', tr).value,
+        replace_current: $('.r-replace', tr).checked,
+      });
+      const span = res.effective_from === todayISO()
+        ? `till ${fmtDate(res.valid_until)}`
+        : `from ${fmtDate(res.effective_from)} till ${fmtDate(res.valid_until)}`;
+      toast(`${res.action === 'updated' ? 'Updated' : 'Added'} rate for ${vendor}, ${span}`);
+      showError(err, '');
+      $('.rate-form', tr).reset();
+      $('.r-new', tr).hidden = true;
+      await loadProducts();
+    } catch (x) {
+      showError(err, x.message);
+    }
+  });
+
+  tr.addEventListener('click', async e => {
+    const btn = e.target.closest('[data-del-rate]');
+    if (!btn) return;
+    if (!confirm('Delete this rate entry? If it is the vendor’s only entry, the vendor is removed from this product.')) return;
+    try {
+      await api('DELETE', `/api/rates/${btn.dataset.delRate}`);
+      toast('Deleted rate entry');
+      await loadProducts();
+    } catch (x) { toast(x.message); }
+  });
+  return tr;
+}
+
+function panelVendor() {
+  const tr = state.panel;
+  const picked = $('.r-vendor', tr).value;
+  return knownVendor(picked === NEW_VENDOR ? $('.r-new', tr).value.trim() : picked);
+}
+
+// Tells the user when the new rate will start, since that is worked out automatically.
+function updateStartNote() {
+  const tr = state.panel;
+  if (!tr) return;
+  const note = $('.start-note', tr), text = $('.start-text', tr), check = $('.check', tr);
+  const vendor = panelVendor();
+  const info = Object.entries(state.panelInfo).find(([v]) => v.toLowerCase() === vendor.toLowerCase())?.[1];
+  note.hidden = !vendor;
+  check.hidden = true;
+  if (!vendor) return;
+
+  if (!info || (!info.latest_end && !info.open_ended)) {
+    text.textContent = 'Starts today.';
+  } else if (info.open_ended) {
+    text.textContent = 'Starts today and replaces the current rate, which has no end date.';
+  } else {
+    check.hidden = false;
+    text.textContent = $('.r-replace', tr).checked
+      ? 'Starts today. The current rate stops applying from today.'
+      : `Starts ${fmtDate(info.start)}, the day after the latest rate for this vendor ends.`;
+  }
+}
+
+function togglePanel(id, vendor) {
+  if (state.openId === id && !vendor) {
+    state.openId = null;
+    state.panel?.remove();
+    renderProducts();
+    return;
+  }
+  const p = state.products.find(p => p.id === id);
+  if (!p) return;
+  if (!state.panel) state.panel = buildPanel();
+  const tr = state.panel;
+  if (state.openId !== id) {
+    state.openId = id;
+    state.panelInfo = {};
+    $('.p-name', tr).textContent = p.name;
+    $('.p-unit', tr).textContent = p.unit;
+    $('.rate-form', tr).reset();
+    $('.r-new', tr).hidden = true;
+    showError($('.r-error', tr), '');
+    $('.history tbody', tr).innerHTML = '<tr><td colspan="6" class="muted">Loading…</td></tr>';
+    renderProducts();
+    refreshPanelVendors();
+  }
+  if (vendor) $('.r-vendor', tr).value = vendor;
+  updateStartNote();
+  loadHistory().catch(err => toast(err.message));
+  (vendor ? $('.r-cost', tr) : $('.r-vendor', tr)).focus({ preventScroll: true });
+  tr.scrollIntoView({ behavior: reduceMotion() ? 'auto' : 'smooth', block: 'nearest' });
+}
+
+// Vendors already quoting this product are listed first.
+function refreshPanelVendors() {
+  if (!state.panel || !state.openId) return;
+  const s = $('.r-vendor', state.panel);
+  const current = s.value;
+  const p = state.products.find(p => p.id === state.openId);
+  const mine = p ? p.vendors.map(v => v.vendor).sort((a, b) => a.localeCompare(b)) : [];
+  const others = state.vendors.filter(v => !mine.includes(v));
+  const opt = n => `<option value="${esc(n)}">${esc(n)}</option>`;
+  s.innerHTML = `<option value="">Select vendor</option>` +
+    (mine.length ? `<optgroup label="Already quoting this product">${mine.map(opt).join('')}</optgroup>` : '') +
+    (others.length ? `<optgroup label="Other vendors">${others.map(opt).join('')}</optgroup>` : '') +
+    `<option value="${NEW_VENDOR}">+ New vendor…</option>`;
+  s.value = [...s.options].some(o => o.value === current) ? current : '';
+  $('.r-new', state.panel).hidden = s.value !== NEW_VENDOR;
+}
+
+async function loadHistory() {
+  const id = state.openId;
+  if (!id || !state.panel) return;
+  const data = await api('GET', `/api/products/${id}/rates?date=${state.asOf}`);
+  if (state.openId !== id) return; // another panel was opened meanwhile
+  state.panelInfo = data.vendors;
+  updateStartNote();
+  $('.hist-asof', state.panel).textContent = state.asOf === todayISO() ? '' : `(status on ${fmtDate(state.asOf)})`;
+  $('.history tbody', state.panel).innerHTML = data.entries.length
+    ? data.entries.map(r => `<tr>
+        <td>${esc(r.vendor)}</td>
+        <td class="num">${inr.format(r.cost)}</td>
+        <td>${fmtDate(r.effective_from)}</td>
+        <td>${r.valid_until ? fmtDate(r.valid_until) : '<span class="muted">No end date</span>'}</td>
+        <td><span class="status st-${r.status}">${esc(r.status_label)}</span></td>
+        <td class="num"><button class="icon-btn" data-del-rate="${r.id}" aria-label="Delete this rate entry" title="Delete this rate entry">×</button></td>
+      </tr>`).join('')
+    : '<tr><td colspan="6" class="empty">No rates yet. Add the first one above.</td></tr>';
+}
+
+/* ---------------- list actions ---------------- */
+$('#product-table').addEventListener('click', async e => {
+  if (e.target.closest('tr.panel-row')) return; // clicks inside the Rates panel are handled there
+  const renew = e.target.closest('[data-renew]');
+  const rates = e.target.closest('[data-rates]');
+  const edit = e.target.closest('[data-edit]');
+  const del = e.target.closest('[data-del]');
+  if (renew) return togglePanel(Number(renew.dataset.renew), renew.dataset.vendor);
+  if (rates) return togglePanel(Number(rates.dataset.rates));
+  if (edit) return editProduct(Number(edit.dataset.edit));
+  if (del) {
+    const p = state.products.find(p => p.id === Number(del.dataset.del));
+    if (!p || !confirm(`Delete ${p.name}? Its whole rate history is deleted too.`)) return;
+    try {
+      await api('DELETE', `/api/products/${p.id}`);
+      if (state.editingId === p.id) resetForm();
+      if (state.openId === p.id) { state.openId = null; state.panel?.remove(); }
+      toast(`Deleted ${p.name}`);
+      await loadProducts();
+    } catch (err) { toast(err.message); }
+  }
+});
+
+/* ---------------- start ---------------- */
+$('#as-of').value = state.asOf;
+resetForm();
+loadProducts().catch(err => {
+  showError($('#form-error'), `Couldn't load products: ${err.message} Is app.py running?`);
+});
+</script>
+</body>
+</html>
